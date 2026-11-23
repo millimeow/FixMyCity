@@ -1,141 +1,157 @@
 generator client {
- provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
+
 datasource db {
- provider = "sqlite"
- url = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
+
 model User {
- id String @id @default(cuid())
- name String
- email String @unique
- passwordHash String
- role String @default("CITIZEN")
- departmentId String?
- department Department? @relation(fields:[departmentId], references:[id])
- createdAt DateTime @default(now())
- sessions Session[]
- complaints Complaint[] @relation("Reporter")
- assignments Complaint[] @relation("Assignee")
- history History[]
- supports Support[]
- notifications Notification[]
- feedback Feedback[]
+  id            String         @id @default(cuid())
+  name          String
+  email         String         @unique
+  passwordHash  String
+  role          String         @default("CITIZEN")
+  departmentId  String?
+  department    Department?    @relation(fields: [departmentId], references: [id])
+  createdAt     DateTime       @default(now())
+  sessions      Session[]
+  complaints    Complaint[]    @relation("Reporter")
+  assignments   Complaint[]    @relation("Assignee")
+  history       History[]
+  supports      Support[]
+  notifications Notification[]
+  feedback      Feedback[]
 }
+
 model Session {
- id String @id
- userId String
- user User @relation(fields:[userId], references:[id], onDelete:Cascade)
- csrf String
- expiresAt DateTime
- @@index([expiresAt])
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  csrf      String
+  expiresAt DateTime
+
+  @@index([expiresAt])
 }
+
 model Department {
- id String @id @default(cuid())
- name String @unique
- description String
- officers User[]
- categories Category[]
- complaints Complaint[]
+  id          String      @id @default(cuid())
+  name        String      @unique
+  description String
+  officers    User[]
+  categories  Category[]
+  complaints  Complaint[]
 }
+
 model Category {
- id String @id @default(cuid())
- name String @unique
- icon String
- departmentId String
- department Department @relation(fields:[departmentId],references:[id])
- complaints Complaint[]
+  id           String      @id @default(cuid())
+  name         String      @unique
+  icon         String
+  departmentId String
+  department   Department  @relation(fields: [departmentId], references: [id])
+  complaints   Complaint[]
 }
+
 model Complaint {
- id String @id @default(cuid())
- title String
- description String
- address String
- ward String
- city String
- latitude Float?
- longitude Float?
- priority String @default("NORMAL")
- status String @default("SUBMITTED")
- citizenId String
- citizen User @relation("Reporter",fields:[citizenId],references:[id])
- categoryId String
- category Category @relation(fields:[categoryId],references:[id])
- departmentId String
- department Department @relation(fields:[departmentId],references:[id])
- officerId String?
- officer User? @relation("Assignee",fields:[officerId],references:[id])
- createdAt DateTime @default(now())
- updatedAt DateTime @updatedAt
- dueAt DateTime
- resolvedAt DateTime?
- escalatedAt DateTime?
- images Image[]
- videos Video[]
- history History[]
- supports Support[]
- feedback Feedback[]
- notifications Notification[]
- @@index([status,city])
- @@index([officerId])
- @@index([dueAt])
+  id            String         @id @default(cuid())
+  title         String
+  description   String
+  address       String
+  ward          String
+  city          String
+  latitude      Float?
+  longitude     Float?
+  priority      String         @default("NORMAL")
+  status        String         @default("SUBMITTED")
+  citizenId     String
+  citizen       User           @relation("Reporter", fields: [citizenId], references: [id])
+  categoryId    String
+  category      Category       @relation(fields: [categoryId], references: [id])
+  departmentId  String
+  department    Department     @relation(fields: [departmentId], references: [id])
+  officerId     String?
+  officer       User?          @relation("Assignee", fields: [officerId], references: [id])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  dueAt         DateTime
+  resolvedAt    DateTime?
+  escalatedAt   DateTime?
+  images        Image[]
+  videos        Video[]
+  history       History[]
+  supports      Support[]
+  feedback      Feedback[]
+  notifications Notification[]
+
+  @@index([status, city])
+  @@index([officerId])
+  @@index([dueAt])
 }
+
 model Image {
- id String @id @default(cuid())
- url String
- kind String @default("REPORT")
- complaintId String
- complaint Complaint @relation(fields:[complaintId],references:[id],onDelete:Cascade)
- createdAt DateTime @default(now())
+  id          String    @id @default(cuid())
+  url         String
+  kind        String    @default("REPORT")
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
 }
+
 model History {
- id String @id @default(cuid())
- complaintId String
- complaint Complaint @relation(fields:[complaintId],references:[id],onDelete:Cascade)
- actorId String?
- actor User? @relation(fields:[actorId],references:[id])
- status String
- note String
- createdAt DateTime @default(now())
+  id          String    @id @default(cuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  actorId     String?
+  actor       User?     @relation(fields: [actorId], references: [id])
+  status      String
+  note        String
+  createdAt   DateTime  @default(now())
 }
+
 model Support {
- userId String
- user User @relation(fields:[userId],references:[id],onDelete:Cascade)
- complaintId String
- complaint Complaint @relation(fields:[complaintId],references:[id],onDelete:Cascade)
- createdAt DateTime @default(now())
- @@id([userId,complaintId])
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@id([userId, complaintId])
 }
+
 model Feedback {
- id String @id @default(cuid())
- complaintId String
- complaint Complaint @relation(fields:[complaintId],references:[id],onDelete:Cascade)
- userId String
- user User @relation(fields:[userId],references:[id])
- rating Int
- comment String
- reopened Boolean @default(false)
- createdAt DateTime @default(now())
+  id          String    @id @default(cuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  rating      Int
+  comment     String
+  reopened    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
 }
+
 model Notification {
- id String @id @default(cuid())
- userId String
- user User @relation(fields:[userId],references:[id],onDelete:Cascade)
- complaintId String?
- complaint Complaint? @relation(fields:[complaintId],references:[id],onDelete:Cascade)
- message String
- readAt DateTime?
- createdAt DateTime @default(now())
- @@index([userId,createdAt])
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  complaintId String?
+  complaint   Complaint? @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  message     String
+  readAt      DateTime?
+  createdAt   DateTime   @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model Video {
- id String @id @default(cuid())
- url String
- mimeType String
- sizeBytes Int
- complaintId String
- complaint Complaint @relation(fields:[complaintId],references:[id],onDelete:Cascade)
- createdAt DateTime @default(now())
- @@index([complaintId])
+  id          String    @id @default(cuid())
+  url         String
+  mimeType    String
+  sizeBytes   Int
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@index([complaintId])
 }

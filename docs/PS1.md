@@ -12,11 +12,11 @@ Build a **centralized digital platform** that allows citizens to directly report
 
 A citizen can submit an issue with details such as:
 
-* Issue category  
-* Description  
-* Location  
-* Photograph/video  
-* Date of reporting
+- Issue category
+- Description
+- Location
+- Photograph/video
+- Date of reporting
 
 The system then routes the complaint to the **relevant department/authority**, where an authorized officer can review, assign, update, and resolve it.
 
@@ -36,30 +36,29 @@ The system then routes the complaint to the **relevant department/authority**, w
 
 ### **4\. Key Features**
 
-* Citizen registration/login  
-* Civic issue reporting  
-* Location and image attachment  
-* Complaint categorization  
-* Department/authority routing  
-* Complaint status tracking  
-* Officer/admin dashboard  
-* Assignment and resolution tracking  
-* Notifications/status updates  
-* Escalation for long-pending complaints  
-* Basic analytics on complaints and resolution time
+- Citizen registration/login
+- Civic issue reporting
+- Location and image attachment
+- Complaint categorization
+- Department/authority routing
+- Complaint status tracking
+- Officer/admin dashboard
+- Assignment and resolution tracking
+- Notifications/status updates
+- Escalation for long-pending complaints
+- Basic analytics on complaints and resolution time
 
 ### **5\. Future Scope**
 
 The system could later be expanded with:
 
-* Duplicate complaint detection  
-* Location-based issue clustering  
-* Interactive municipal dashboards/maps  
-* AI-based image classification of civic issues  
-* Prediction of frequently occurring problem areas  
-* Automated prioritization of critical complaints
+- Duplicate complaint detection
+- Location-based issue clustering
+- Interactive municipal dashboards/maps
+- AI-based image classification of civic issues
+- Prediction of frequently occurring problem areas
+- Automated prioritization of critical complaints
 
 ### **6\. Technologies/Concepts**
 
 The project can directly utilize our current **React, JavaScript, Node.js, Express, HTTP, middleware, Prisma, and SQL/database** concepts, while leaving room for additional technologies and AI features as we learn them.
-

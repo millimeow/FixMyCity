@@ -1,11 +1,170 @@
-import {db} from '../db.js';
-import * as service from '../services/complaints.js';
-import {fail} from '../services/security.js';
-export async function list(req,res){const q=req.query;const where=q.scope==='mine'||q.scope==='assigned'?{}:{city:'Mumbai'};if(q.q)where.OR=['title','description','address','ward'].map(field=>({[field]:{contains:String(q.q).slice(0,120)}}));if(q.city)where.city=String(q.city);if(q.category)where.categoryId=String(q.category);if(q.status){if(!service.statuses.includes(q.status))fail(400,'Invalid status filter.');where.status=q.status;}if(q.scope==='mine'){if(!req.user)fail(401,'Please sign in.');where.citizenId=req.user.id;}if(q.scope==='assigned'){if(!req.user||req.user.role==='CITIZEN')fail(403,'Staff access required.');if(req.user.role==='OFFICER')where.officerId=req.user.id;}if(q.overdue==='true')Object.assign(where,{dueAt:{lt:new Date()},status:{notIn:['RESOLVED','CLOSED']}});const page=Math.max(1,Math.min(10000,Number(q.page)||1));const [items,total]=await Promise.all([db.complaint.findMany({where,include:service.include,orderBy:{createdAt:'desc'},take:12,skip:(page-1)*12}),db.complaint.count({where})]);const supports=req.user?await db.support.findMany({where:{userId:req.user.id},select:{complaintId:true}}):[];res.json({items:items.map(c=>({...service.present(c,req.user),supported:supports.some(s=>s.complaintId===c.id)})),total,page,pages:Math.ceil(total/12)});}
-export async function detail(req,res){const c=await service.getComplaint(req.params.id);const supported=req.user?!!await db.support.findUnique({where:{userId_complaintId:{userId:req.user.id,complaintId:c.id}}}):false;res.json({...service.present(c,req.user),supported});}
-export async function create(req,res){res.status(201).json(await service.createComplaint(req.body,req.user));}
-export async function assign(req,res){res.json(await service.assignComplaint(req.params.id,req.body,req.user));}
-export async function status(req,res){res.json(await service.updateStatus(req.params.id,req.body,req.user));}
-export async function feedback(req,res){res.json(await service.feedback(req.params.id,req.body,req.user));}
-export async function support(req,res){await service.getComplaint(req.params.id);const where={userId_complaintId:{userId:req.user.id,complaintId:req.params.id}};if(req.method==='DELETE')await db.support.deleteMany({where:where.userId_complaintId});else await db.support.upsert({where,create:{userId:req.user.id,complaintId:req.params.id},update:{}});res.json({supportCount:await db.support.count({where:{complaintId:req.params.id}}),supported:req.method!=='DELETE'});}
-export async function duplicates(req,res){res.json(await service.duplicates(req.query));}
+import { db } from "../db.js";
+import * as service from "../services/complaints.js";
+import { fail } from "../services/security.js";
+
+export async function list(request, response) {
+  const query = request.query;
+  const where =
+    query.scope === "mine" || query.scope === "assigned"
+      ? {}
+      : {
+          city: "Mumbai",
+        };
+  if (query.q) {
+    where.OR = ["title", "description", "address", "ward"].map((field) => {
+      return {
+        [field]: {
+          contains: String(query.q).slice(0, 120),
+        },
+      };
+    });
+  }
+  if (query.city) {
+    where.city = String(query.city);
+  }
+  if (query.category) {
+    where.categoryId = String(query.category);
+  }
+  if (query.status) {
+    if (!service.statuses.includes(query.status)) {
+      fail(400, "Invalid status filter.");
+    }
+    where.status = query.status;
+  }
+  if (query.scope === "mine") {
+    if (!request.user) {
+      fail(401, "Please sign in.");
+    }
+    where.citizenId = request.user.id;
+  }
+  if (query.scope === "assigned") {
+    if (!request.user || request.user.role === "CITIZEN") {
+      fail(403, "Staff access required.");
+    }
+    if (request.user.role === "OFFICER") {
+      where.officerId = request.user.id;
+    }
+  }
+  if (query.overdue === "true") {
+    Object.assign(where, {
+      dueAt: {
+        lt: new Date(),
+      },
+      status: {
+        notIn: ["RESOLVED", "CLOSED"],
+      },
+    });
+  }
+  const page = Math.max(1, Math.min(10000, Number(query.page) || 1));
+  const [items, total] = await Promise.all([
+    db.complaint.findMany({
+      where,
+      include: service.include,
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 12,
+      skip: (page - 1) * 12,
+    }),
+    db.complaint.count({
+      where,
+    }),
+  ]);
+  const supports = request.user
+    ? await db.support.findMany({
+        where: {
+          userId: request.user.id,
+        },
+        select: {
+          complaintId: true,
+        },
+      })
+    : [];
+  response.json({
+    items: items.map((complaint) => {
+      return {
+        ...service.present(complaint, request.user),
+        supported: supports.some((s) => {
+          return s.complaintId === complaint.id;
+        }),
+      };
+    }),
+    total,
+    page,
+    pages: Math.ceil(total / 12),
+  });
+}
+
+export async function detail(request, response) {
+  const complaint = await service.getComplaint(request.params.id);
+  const supported = request.user
+    ? !!(await db.support.findUnique({
+        where: {
+          userId_complaintId: {
+            userId: request.user.id,
+            complaintId: complaint.id,
+          },
+        },
+      }))
+    : false;
+  response.json({
+    ...service.present(complaint, request.user),
+    supported,
+  });
+}
+
+export async function create(request, response) {
+  response.status(201).json(await service.createComplaint(request.body, request.user));
+}
+
+export async function assign(request, response) {
+  response.json(
+    await service.assignComplaint(request.params.id, request.body, request.user),
+  );
+}
+
+export async function status(request, response) {
+  response.json(
+    await service.updateStatus(request.params.id, request.body, request.user),
+  );
+}
+
+export async function feedback(request, response) {
+  response.json(await service.feedback(request.params.id, request.body, request.user));
+}
+
+export async function support(request, response) {
+  await service.getComplaint(request.params.id);
+  const where = {
+    userId_complaintId: {
+      userId: request.user.id,
+      complaintId: request.params.id,
+    },
+  };
+  if (request.method === "DELETE") {
+    await db.support.deleteMany({
+      where: where.userId_complaintId,
+    });
+  } else {
+    await db.support.upsert({
+      where,
+      create: {
+        userId: request.user.id,
+        complaintId: request.params.id,
+      },
+      update: {},
+    });
+  }
+  response.json({
+    supportCount: await db.support.count({
+      where: {
+        complaintId: request.params.id,
+      },
+    }),
+    supported: request.method !== "DELETE",
+  });
+}
+
+export async function duplicates(request, response) {
+  response.json(await service.duplicates(request.query));
+}

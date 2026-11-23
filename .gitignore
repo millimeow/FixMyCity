@@ -3,3 +3,8 @@ node_modules/
 prisma/*.db*
 uploads/
 *.log
+
+.DS_Store
+.vercel/
+.env.*
+!.env.example

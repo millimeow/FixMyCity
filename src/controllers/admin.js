@@ -1,7 +1,200 @@
-import {db} from '../db.js';
-import {text,email,password,hashPassword,safeUser,fail} from '../services/security.js';
-export async function users(req,res){res.json((await db.user.findMany({include:{department:true},orderBy:{createdAt:'desc'}})).map(u=>({...safeUser(u),department:u.department})));}
-export async function createUser(req,res){const b=req.body;const role=b.role;if(!['OFFICER','ADMIN'].includes(role))fail(400,'Staff role must be officer or admin.');if(role==='OFFICER'&&!await db.department.findUnique({where:{id:String(b.departmentId||'')}}))fail(400,'Choose a department for this officer.');const u=await db.user.create({data:{name:text(b.name,'Name',2,70),email:email(b.email),passwordHash:await hashPassword(password(b.password)),role,departmentId:role==='OFFICER'?b.departmentId:null}});res.status(201).json(safeUser(u));}
-export async function createDepartment(req,res){res.status(201).json(await db.department.create({data:{name:text(req.body.name,'Department name',3,80),description:text(req.body.description,'Description',5,400)}}));}
-export async function createCategory(req,res){if(!await db.department.findUnique({where:{id:String(req.body.departmentId||'')}}))fail(400,'Choose a department.');res.status(201).json(await db.category.create({data:{name:text(req.body.name,'Category',3,80),icon:'general',departmentId:req.body.departmentId}}));}
-export async function analytics(req,res){const where=req.user.role==='OFFICER'?{officerId:req.user.id}:{};const all=await db.complaint.findMany({where,include:{category:true,department:true,feedback:true,_count:{select:{supports:true}}}});const closed=all.filter(c=>['RESOLVED','CLOSED'].includes(c.status));const overdue=all.filter(c=>!['RESOLVED','CLOSED'].includes(c.status)&&c.dueAt<new Date());const group=key=>Object.values(all.reduce((a,c)=>{const name=c[key].name;a[name]||={name,total:0,resolved:0};a[name].total++;if(['RESOLVED','CLOSED'].includes(c.status))a[name].resolved++;return a;},{}));const ratings=all.flatMap(c=>c.feedback.map(f=>f.rating));const trend=Array.from({length:6},(_,i)=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-5+i);return {month:d.toLocaleString('en-IN',{month:'short'}),total:all.filter(c=>c.createdAt.getMonth()===d.getMonth()&&c.createdAt.getFullYear()===d.getFullYear()).length};});res.json({total:all.length,resolved:closed.length,active:all.length-closed.length,overdue:overdue.length,escalated:all.filter(c=>c.escalatedAt).length,supports:all.reduce((a,c)=>a+c._count.supports,0),averageHours:closed.length?Math.round(closed.reduce((a,c)=>a+(c.resolvedAt-c.createdAt)/3600000,0)/closed.length):0,averageRating:ratings.length?Number((ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(1)):null,categories:group('category'),departments:group('department'),statuses:await db.complaint.groupBy({by:['status'],where,_count:{_all:true}}),trend});}
+import { db } from "../db.js";
+import {
+  text,
+  email,
+  password,
+  hashPassword,
+  safeUser,
+  fail,
+} from "../services/security.js";
+
+export async function users(request, response) {
+  response.json(
+    (
+      await db.user.findMany({
+        include: {
+          department: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      })
+    ).map((user) => {
+      return {
+        ...safeUser(user),
+        department: user.department,
+      };
+    }),
+  );
+}
+
+export async function createUser(request, response) {
+  const body = request.body;
+  const role = body.role;
+  if (!["OFFICER", "ADMIN"].includes(role)) {
+    fail(400, "Staff role must be officer or admin.");
+  }
+  if (
+    role === "OFFICER" &&
+    !(await db.department.findUnique({
+      where: {
+        id: String(body.departmentId || ""),
+      },
+    }))
+  ) {
+    fail(400, "Choose a department for this officer.");
+  }
+  const user = await db.user.create({
+    data: {
+      name: text(body.name, "Name", 2, 70),
+      email: email(body.email),
+      passwordHash: await hashPassword(password(body.password)),
+      role,
+      departmentId: role === "OFFICER" ? body.departmentId : null,
+    },
+  });
+  response.status(201).json(safeUser(user));
+}
+
+export async function createDepartment(request, response) {
+  response.status(201).json(
+    await db.department.create({
+      data: {
+        name: text(request.body.name, "Department name", 3, 80),
+        description: text(request.body.description, "Description", 5, 400),
+      },
+    }),
+  );
+}
+
+export async function createCategory(request, response) {
+  if (
+    !(await db.department.findUnique({
+      where: {
+        id: String(request.body.departmentId || ""),
+      },
+    }))
+  ) {
+    fail(400, "Choose a department.");
+  }
+  response.status(201).json(
+    await db.category.create({
+      data: {
+        name: text(request.body.name, "Category", 3, 80),
+        icon: "general",
+        departmentId: request.body.departmentId,
+      },
+    }),
+  );
+}
+
+export async function analytics(request, response) {
+  const where =
+    request.user.role === "OFFICER"
+      ? {
+          officerId: request.user.id,
+        }
+      : {};
+  const all = await db.complaint.findMany({
+    where,
+    include: {
+      category: true,
+      department: true,
+      feedback: true,
+      _count: {
+        select: {
+          supports: true,
+        },
+      },
+    },
+  });
+  const closed = all.filter((complaint) => {
+    return ["RESOLVED", "CLOSED"].includes(complaint.status);
+  });
+  const overdue = all.filter((complaint) => {
+    return (
+      !["RESOLVED", "CLOSED"].includes(complaint.status) && complaint.dueAt < new Date()
+    );
+  });
+  const group = (key) => {
+    return Object.values(
+      all.reduce((a, complaint) => {
+        const name = complaint[key].name;
+        a[name] ||= {
+          name,
+          total: 0,
+          resolved: 0,
+        };
+        a[name].total++;
+        if (["RESOLVED", "CLOSED"].includes(complaint.status)) {
+          a[name].resolved++;
+        }
+        return a;
+      }, {}),
+    );
+  };
+  const ratings = all.flatMap((complaint) => {
+    return complaint.feedback.map((f) => {
+      return f.rating;
+    });
+  });
+  const trend = Array.from(
+    {
+      length: 6,
+    },
+    (_, i) => {
+      const d = new Date();
+      d.setDate(1);
+      d.setMonth(d.getMonth() - 5 + i);
+      return {
+        month: d.toLocaleString("en-IN", {
+          month: "short",
+        }),
+        total: all.filter((complaint) => {
+          return (
+            complaint.createdAt.getMonth() === d.getMonth() &&
+            complaint.createdAt.getFullYear() === d.getFullYear()
+          );
+        }).length,
+      };
+    },
+  );
+  response.json({
+    total: all.length,
+    resolved: closed.length,
+    active: all.length - closed.length,
+    overdue: overdue.length,
+    escalated: all.filter((complaint) => {
+      return complaint.escalatedAt;
+    }).length,
+    supports: all.reduce((a, complaint) => {
+      return a + complaint._count.supports;
+    }, 0),
+    averageHours: closed.length
+      ? Math.round(
+          closed.reduce((a, complaint) => {
+            return a + (complaint.resolvedAt - complaint.createdAt) / 3600000;
+          }, 0) / closed.length,
+        )
+      : 0,
+    averageRating: ratings.length
+      ? Number(
+          (
+            ratings.reduce((a, body) => {
+              return a + body;
+            }, 0) / ratings.length
+          ).toFixed(1),
+        )
+      : null,
+    categories: group("category"),
+    departments: group("department"),
+    statuses: await db.complaint.groupBy({
+      by: ["status"],
+      where,
+      _count: {
+        _all: true,
+      },
+    }),
+    trend,
+  });
+}

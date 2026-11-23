@@ -30,15 +30,15 @@ The defaults work without an `.env` file. Set `PORT`, `HOST`, `DATABASE_URL`, `C
 
 All use **`CityDemo!2026`**. The sign-in page also has buttons to fill these credentials.
 
-| Role | Email | Use |
-| --- | --- | --- |
-| Citizen | citizen@fixmycity.local | Report, support, track, give feedback |
-| Another citizen | neighbor@fixmycity.local | Support others' issues |
-| Roads officer | officer@fixmycity.local | Assigned roads and public-space reports |
-| Waste officer | officer2@fixmycity.local | Assigned waste reports |
-| Water officer | officer3@fixmycity.local | Assigned water and drainage reports |
-| Electrical officer | officer4@fixmycity.local | Assigned streetlight reports |
-| Administrator | admin@fixmycity.local | Assignment, departments, categories, staff, analytics |
+| Role               | Email                    | Use                                                   |
+| ------------------ | ------------------------ | ----------------------------------------------------- |
+| Citizen            | citizen@fixmycity.local  | Report, support, track, give feedback                 |
+| Another citizen    | neighbor@fixmycity.local | Support others' issues                                |
+| Roads officer      | officer@fixmycity.local  | Assigned roads and public-space reports               |
+| Waste officer      | officer2@fixmycity.local | Assigned waste reports                                |
+| Water officer      | officer3@fixmycity.local | Assigned water and drainage reports                   |
+| Electrical officer | officer4@fixmycity.local | Assigned streetlight reports                          |
+| Administrator      | admin@fixmycity.local    | Assignment, departments, categories, staff, analytics |
 
 Public registration always creates a citizen. Administrators create staff accounts from Administration. Staff navigation contains My workspace, City analytics and Notifications (plus Administration for admins). Community board, reporting, and community support actions are citizen-only; staff attempting citizen routes return to My workspace. Demo passwords are for local use; do not expose this seeded database to the internet.
 
